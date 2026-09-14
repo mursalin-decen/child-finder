@@ -8,12 +8,24 @@ export async function PATCH(
 ) {
     try {
         const { id } = await params;
+        const body = await request.json(); // ফ্রন্টএন্ড থেকে পাওয়া ডাটা
+        const { foundLocation, foundDate, lat, lng } = body;
+
         await connectToDatabase();
 
-        // status ফিল্ডকে 'Found' হিসেবে আপডেট করা হচ্ছে
+        const updateData: any = {
+            status: 'Found',
+            foundLocation: foundLocation || 'উদ্ধার করা হয়েছে',
+            foundDate: foundDate || new Date().toISOString().split('T')[0],
+        };
+
+        if (lat && lng) {
+            updateData.foundCoordinates = { lat, lng };
+        }
+
         const updatedChild = await MissingChild.findByIdAndUpdate(
             id,
-            { status: 'Found' },
+            updateData,
             { new: true }
         );
 

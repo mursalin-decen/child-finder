@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+// Step 2 (নোট ১): Next.js-এর Link ইম্পোর্ট করা হলো
+import Link from 'next/link';
 
 interface Child {
   _id: string;
@@ -17,7 +19,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [children, setChildren] = useState<Child[]>([]);
   const [fetching, setFetching] = useState(true);
-  const [searchQuery, setSearchQuery] = useState(''); // সার্চের জন্য নতুন স্টেট
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchChildren = async () => {
     try {
@@ -63,7 +65,6 @@ export default function Home() {
     }
   };
 
-  // সার্চের ওপর ভিত্তি করে শিশুদের তালিকা ফিল্টার করা
   const filteredChildren = children.filter((child) =>
     child.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
     child.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -129,7 +130,7 @@ export default function Home() {
             </h2>
             <input
               type="text"
-              placeholder="নাম বা এলাকা দিয়ে খুঁজুন..."
+              placeholder="নাম বা এলাকা দিয়ে খুঁজুন..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full sm:w-72 bg-slate-900 border border-slate-700 p-2.5 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -139,7 +140,7 @@ export default function Home() {
           {fetching ? (
             <p className="text-gray-400 text-center py-8">ডাটা লোড হচ্ছে...</p>
           ) : filteredChildren.length === 0 ? (
-            <p className="text-gray-400 text-center py-8">কোনো রিপোর্ট পাওয়া যায়নি।</p>
+            <p className="text-gray-400 text-center py-8">কোনো রিপোর্ট পাওয়া যায়নি।</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredChildren.map((child) => (
@@ -159,11 +160,21 @@ export default function Home() {
                         <p className="mt-2 text-gray-400 text-xs line-clamp-3"><span className="text-gray-300 font-medium">বিবরণ:</span> {child.description}</p>
                       </div>
                     </div>
-                    <div className="pt-3 border-t border-slate-800 mt-auto">
+
+                    <div className="pt-3 border-t border-slate-800 mt-auto space-y-2">
                       <p className="text-sm font-semibold text-blue-400 flex items-center gap-1">
                         📞 {child.contactNumber}
                       </p>
+
+                      {/* Step 2 (নোট ২): বিস্তারিত দেখুন বাটন যুক্ত করা হলো */}
+                      <Link
+                        href={`/child/${child._id}`}
+                        className="block text-center w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-md transition"
+                      >
+                        বিস্তারিত দেখুন
+                      </Link>
                     </div>
+
                   </div>
                 </div>
               ))}

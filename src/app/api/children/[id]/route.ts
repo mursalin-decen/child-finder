@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '../../../lib/mongodb';
-import MissingChild from '../../../models/MissingChild';
+import { connectToDatabase } from '@/lib/mongodb';
+import MissingChild from '@/models/MissingChild';
+
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -9,15 +10,16 @@ export async function PATCH(
         const { id } = await params;
         await connectToDatabase();
 
+        // status ফিল্ডকে 'Found' হিসেবে আপডেট করা হচ্ছে
         const updatedChild = await MissingChild.findByIdAndUpdate(
             id,
-            { isFound: true },
+            { status: 'Found' },
             { new: true }
         );
 
         if (!updatedChild) {
             return NextResponse.json(
-                { success: false, error: 'রিপোর্টটি পাওয়া যায়নি' },
+                { success: false, error: 'রিপোর্টটি পাওয়া যায়নি' },
                 { status: 404 }
             );
         }
@@ -25,7 +27,7 @@ export async function PATCH(
         return NextResponse.json({ success: true, data: updatedChild }, { status: 200 });
     } catch (error: any) {
         return NextResponse.json(
-            { success: false, error: 'স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে' },
+            { success: false, error: 'স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে' },
             { status: 500 }
         );
     }

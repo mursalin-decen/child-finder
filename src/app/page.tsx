@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// Step 2 (নোট ১): Next.js-এর Link ইম্পোর্ট করা হলো
 import Link from 'next/link';
 
 interface Child {
@@ -13,6 +12,7 @@ interface Child {
   description: string;
   contactNumber: string;
   imageUrl: string;
+  status: 'Missing' | 'Found';
 }
 
 export default function Home() {
@@ -62,6 +62,29 @@ export default function Home() {
       alert('সার্ভারে সমস্যা হয়েছে!');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Mark as Found ট্রিগার করার ফাংশন
+  const handleMarkAsFound = async (id: string) => {
+    const confirmAction = confirm('আপনি কি নিশ্চিত যে এই শিশুটিকে পাওয়া গেছে?');
+    if (!confirmAction) return;
+
+    try {
+      const res = await fetch(`/api/children/${id}`, {
+        method: 'PATCH',
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert('স্ট্যাটাস সফলভাবে আপডেট করা হয়েছে!');
+        fetchChildren(); // লিস্ট রিফ্রেশ করা
+      } else {
+        alert('আপডেট করতে সমস্যা হয়েছে।');
+      }
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('সার্ভারে সমস্যা হয়েছে!');
     }
   };
 
@@ -144,7 +167,21 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredChildren.map((child) => (
-                <div key={child._id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-md flex flex-col">
+                <div key={child._id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-md flex flex-col relative">
+
+                  {/* Found / Missing Badge */}
+                  <div className="absolute top-3 right-3 z-10">
+                    {child.status === 'Found' ? (
+                      <span className="bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                        ✓ পাওয়া গেছে
+                      </span>
+                    ) : (
+                      <span className="bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                        খোঁজ চলছে
+                      </span>
+                    )}
+                  </div>
+
                   <img
                     src={child.imageUrl}
                     alt={child.name}
@@ -166,13 +203,23 @@ export default function Home() {
                         📞 {child.contactNumber}
                       </p>
 
-                      {/* Step 2 (নোট ২): বিস্তারিত দেখুন বাটন যুক্ত করা হলো */}
-                      <Link
-                        href={`/child/${child._id}`}
-                        className="block text-center w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-md transition"
-                      >
-                        বিস্তারিত দেখুন
-                      </Link>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/child/${child._id}`}
+                          className="flex-1 text-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-md transition"
+                        >
+                          বিস্তারিত
+                        </Link>
+
+                        {child.status !== 'Found' && (
+                          <button
+                            onClick={() => handleMarkAsFound(child._id)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-md transition"
+                          >
+                            Mark as Found
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                   </div>

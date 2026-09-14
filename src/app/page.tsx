@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import LocationSelector from '@/components/LocationSelector';
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 interface Person {
   _id: string;
@@ -32,6 +34,7 @@ export default function Home() {
       }
     } catch (err) {
       console.error('Error fetching data:', err);
+      toast.error('ডাটা লোড করতে সমস্যা হয়েছে');
     } finally {
       setFetching(false);
     }
@@ -45,11 +48,12 @@ export default function Home() {
     e.preventDefault();
 
     if (!selectedLocation) {
-      alert('অনুগ্রহ করে বাচ্চার হারানো এলাকা ড্রপডাউন থেকে নির্বাচন করুন।');
+      toast.error('অনুগ্রহ করে বাচ্চার হারানো এলাকা ড্রপডাউন থেকে নির্বাচন করুন!');
       return;
     }
 
     setLoading(true);
+    const toastId = toast.loading('রিপোর্ট জমা দেওয়া হচ্ছে...');
     const formData = new FormData(e.currentTarget);
 
     try {
@@ -59,24 +63,44 @@ export default function Home() {
       });
 
       if (res.ok) {
-        alert('রিপোর্ট সফলভাবে জমা হয়েছে!');
+        toast.success('রিপোর্ট সফলভাবে জমা হয়েছে!', { id: toastId });
         (e.target as HTMLFormElement).reset();
         setSelectedLocation('');
         fetchPeople();
       } else {
-        alert('কোথাও ভুল হয়েছে, আবার চেষ্টা করুন।');
+        toast.error('কোথাও ভুল হয়েছে, আবার চেষ্টা করুন।', { id: toastId });
       }
     } catch (err) {
       console.error(err);
-      alert('সার্ভারে সমস্যা হয়েছে!');
+      toast.error('সার্ভারে সমস্যা হয়েছে!', { id: toastId });
     } finally {
       setLoading(false);
     }
   };
 
   const handleMarkAsFound = async (id: string) => {
-    const foundLocation = prompt('ব্যক্তিটিকে কোথায় উদ্ধার করা হয়েছে (স্থান/জেলা)?');
+    // ব্রাউজারের prompt এর বদলে সুন্দর ডার্ক মডাল
+    const { value: foundLocation } = await Swal.fire({
+      title: 'উদ্ধারের স্থান লিখুন',
+      text: 'ব্যক্তিটিকে কোথায় উদ্ধার করা হয়েছে?',
+      input: 'text',
+      inputPlaceholder: 'যেমন: সোনাডাঙ্গা, খুলনা',
+      showCancelButton: true,
+      confirmButtonText: 'আপডেট করুন',
+      cancelButtonText: 'বাতিল',
+      background: '#0f172a',
+      color: '#fff',
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#334155',
+      customClass: {
+        popup: 'border border-slate-800 rounded-2xl shadow-2xl',
+        input: 'bg-slate-900 border-slate-700 text-white rounded-lg'
+      }
+    });
+
     if (!foundLocation) return;
+
+    const toastId = toast.loading('স্ট্যাটাস আপডেট হচ্ছে...');
 
     try {
       const res = await fetch(`/api/children/${id}`, {
@@ -92,20 +116,19 @@ export default function Home() {
 
       const data = await res.json();
       if (data.success) {
-        alert('স্ট্যাটাস সফলভাবে আপডেট করা হয়েছে এবং "Resolved History" পেজে যুক্ত হয়েছে!');
+        toast.success('স্ট্যাটাস আপডেট হয়েছে এবং "Resolved History"-তে যুক্ত হয়েছে!', { id: toastId });
         fetchPeople();
       } else {
-        alert('আপডেট করতে সমস্যা হয়েছে।');
+        toast.error('আপডেট করতে সমস্যা হয়েছে।', { id: toastId });
       }
     } catch (err) {
       console.error(err);
-      alert('সার্ভারে সমস্যা হয়েছে!');
+      toast.error('সার্ভারে সমস্যা হয়েছে!', { id: toastId });
     }
   };
 
-  // সার্চ ও একটিভ কেস ফিল্টারিং
   const filteredPeople = people.filter((person) => {
-    if (person.status === 'Found') return false; // পাওয়া গেছে এমন কেসগুলো মেইন পেজ থেকে হাইড করে হিস্ট্রিতে রাখবে
+    if (person.status === 'Found') return false;
 
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
@@ -120,7 +143,6 @@ export default function Home() {
     <main className="min-h-screen p-4 sm:p-8 flex flex-col items-center">
       <div className="w-full max-w-5xl space-y-12 my-4">
 
-        {/* ফর্ম সেকশন */}
         <div className="flex flex-col items-center space-y-6">
           <div className="text-center space-y-2">
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -148,7 +170,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ডায়নামিক লোকেশন সিলেক্টর */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
                 হারানোর স্থান / এলাকা
@@ -178,7 +199,6 @@ export default function Home() {
           </form>
         </div>
 
-        {/* সাম্প্রতিক রিপোর্ট সেকশন */}
         <div className="space-y-6 pt-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
